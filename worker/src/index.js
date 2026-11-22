@@ -238,7 +238,6 @@ function savedPage(title) {
 <p><button id="close">Close</button> <a href="/">View list</a></p>
 <script nonce="${nonce}">
   document.getElementById("close").onclick = () => window.close();
-  setTimeout(() => window.close(), 1500);
 </script>`
     ),
     200,
