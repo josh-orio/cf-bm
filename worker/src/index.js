@@ -260,11 +260,12 @@ async function listPage(url, env, user) {
       ).bind(user.id).all();
 
   const csrf = await csrfFor(user);
+  const nonce = crypto.randomUUID().replace(/-/g, "");
   const items = results
     .map(
       (a) => `<li><div><a href="${esc(a.url)}" rel="noopener noreferrer" target="_blank">${esc(a.title)}</a><br>
 <small>${esc(new URL(a.url).hostname)} · ${esc(a.saved_at.slice(0, 10))}</small></div>
-<form method="post" action="/delete" class="inline"><input type="hidden" name="csrf" value="${csrf}">
+<form method="post" action="/delete" class="inline delform" data-title="${esc(a.title)}"><input type="hidden" name="csrf" value="${csrf}">
 <input type="hidden" name="id" value="${esc(a.id)}"><button class="del" title="Delete">✕</button></form></li>`
     )
     .join("");
@@ -276,7 +277,17 @@ async function listPage(url, env, user) {
 <form method="post" action="/logout" class="inline"><input type="hidden" name="csrf" value="${csrf}">
 <button class="del">Log out (${esc(user.name)})</button></form></div>
 <form method="get" action="/"><input type="search" name="q" value="${esc(q)}" placeholder="Search"></form>
-<ul>${items || "<p>No articles yet.</p>"}</ul>`
-    )
+<ul>${items || "<p>No articles yet.</p>"}</ul>
+<script nonce="${nonce}">
+  // Ask before deleting. CSP blocks inline onsubmit="", so attach listeners here.
+  for (const f of document.querySelectorAll("form.delform")) {
+    f.addEventListener("submit", (e) => {
+      if (!confirm("Remove \u201c" + f.dataset.title + "\u201d from your list?")) e.preventDefault();
+    });
+  }
+</script>`
+    ),
+    200,
+    nonce
   );
 }
